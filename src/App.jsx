@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Bell, BriefcaseBusiness, GraduationCap, LayoutDashboard, LogOut, Search, Bookmark, ClipboardCheck, UserRound, ShieldCheck, Clock3, MapPin, Menu, X, ExternalLink, CheckCircle2, AlertTriangle } from 'lucide-react';
 import './App.css';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api');
 const demoJobs = [
  { _id:'demo-1', title:'SSC Combined Graduate Level (CGL)', department:'Staff Selection Commission', qualification:['Degree','B.Tech','Postgraduate'], category:'Central Government', ageMin:18, ageMax:32, salary:'As per post / 7th CPC', deadline:'2026-11-02', examDate:'To be announced', location:'All India', description:'Recruitment for various Group B and Group C posts. Check the official notice for post-wise age, qualification and category relaxations.', officialUrl:'https://ssc.gov.in/', documents:['Photo','Signature','Graduation certificate','Valid ID proof'], source:'Official SSC website', verified:false },
  { _id:'demo-2', title:'Railway Recruitment – NTPC', department:'Railway Recruitment Boards', qualification:['12th Pass','Degree','B.Tech'], category:'Central Government', ageMin:18, ageMax:33, salary:'As per post and notification', deadline:'2026-10-28', examDate:'To be announced', location:'All India', description:'Non-Technical Popular Categories. Eligibility varies by post and recruitment notice.', officialUrl:'https://www.rrbcdg.gov.in/', documents:['Photo','Signature','Educational certificates','Category certificate if applicable'], source:'Official RRB website', verified:false },
