@@ -158,10 +158,24 @@ function requireAdmin(req, res, next) {
 
 const router = express.Router();
 
-router.get('/health', (req, res) => res.json({ ok: true, message: 'GovtJob Portal API is running' }));
+router.get('/health', (req, res) => {
+  const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+  res.json({
+    ok: true,
+    message: 'GovtJob Portal API is running',
+    database: states[mongoose.connection.readyState] || 'unknown',
+    hasMongoUri: Boolean(process.env.MONGODB_URI)
+  });
+});
 
 router.post('/auth/register', async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      if (!process.env.MONGODB_URI) {
+        return res.status(503).json({ message: 'Database configuration missing: MONGODB_URI environment variable is not set in Vercel.' });
+      }
+      return res.status(503).json({ message: 'Database is not connected. Please check your MONGODB_URI credentials and MongoDB Atlas IP access (0.0.0.0/0).' });
+    }
     const { username, email, password } = req.body;
     if (!username || !email || !password) return res.status(400).json({ message: 'Username, email, and password are required.' });
     if (password.length < 8) return res.status(400).json({ message: 'Password must contain at least 8 characters.' });
@@ -171,18 +185,26 @@ router.post('/auth/register', async (req, res) => {
     const user = await User.create({ username: username.trim(), email: email.toLowerCase().trim(), passwordHash });
     res.status(201).json({ token: authToken(user), user: { id: user._id, username: user.username, email: user.email, role: user.role }, profile: null });
   } catch (e) {
-    res.status(500).json({ message: 'Could not create account.' });
+    console.error('Registration error:', e);
+    res.status(500).json({ message: e.message || 'Could not create account.' });
   }
 });
 
 router.post('/auth/login', async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      if (!process.env.MONGODB_URI) {
+        return res.status(503).json({ message: 'Database configuration missing: MONGODB_URI environment variable is not set in Vercel.' });
+      }
+      return res.status(503).json({ message: 'Database is not connected. Please check your MONGODB_URI credentials and MongoDB Atlas IP access (0.0.0.0/0).' });
+    }
     const { email, password } = req.body;
     const user = await User.findOne({ $or: [{ email: (email || '').toLowerCase().trim() }, { username: (email || '').trim() }] });
     if (!user || !await bcrypt.compare(password || '', user.passwordHash)) return res.status(401).json({ message: 'Invalid email/username or password.' });
     res.json({ token: authToken(user), user: { id: user._id, username: user.username, email: user.email, role: user.role }, profile: user.profile || null });
-  } catch {
-    res.status(500).json({ message: 'Could not log in.' });
+  } catch (e) {
+    console.error('Login error:', e);
+    res.status(500).json({ message: e.message || 'Could not log in.' });
   }
 });
 
